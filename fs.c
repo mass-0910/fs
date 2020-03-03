@@ -169,7 +169,7 @@ int ls_normal(char *filepath){
 	DIR *dir;
 	struct dirent *dp;
 	int i, j;
-	HANDLE hc = getStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
 	char *extension;
 	
 	if((dir = opendir(filepath)) == NULL){
@@ -249,7 +249,7 @@ int ls_info(char *filepath, char info[8]){
 	int spacenum;
 	int filename_length;
 	char *extension;
-	HANDLE hc = getStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
 	
 	if((dir = opendir(filepath)) == NULL){
 		if(strncmp(filepath, ".", 128) == 0)fprintf(stderr, "current directry cannot open.\n");
