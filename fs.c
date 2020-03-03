@@ -93,10 +93,10 @@ int ext_exist(char ext_array[][16], char *extension);
 int mediaFileNumber(char *filename);
 int codeFileNumber(char *filename);
 int bineryFileNumber(char *filename);
-Size GetJpegSize(const char *jpg);
-Size GetPngSize(const char *png);
-Size GetBMPSize(const char *bmp);
-unsigned GetDigit(unsigned num);
+Size getJpegSize(const char *jpg);
+Size getPngSize(const char *png);
+Size getBMPSize(const char *bmp);
+unsigned getDigit(unsigned num);
 char *get_extension(char *filename);
 
 char strong_ext[EXTENSION_MAXNUM][16];
@@ -169,7 +169,7 @@ int ls_normal(char *filepath){
 	DIR *dir;
 	struct dirent *dp;
 	int i, j;
-	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hc = getStdHandle(STD_OUTPUT_HANDLE);
 	char *extension;
 	
 	if((dir = opendir(filepath)) == NULL){
@@ -249,7 +249,7 @@ int ls_info(char *filepath, char info[8]){
 	int spacenum;
 	int filename_length;
 	char *extension;
-	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hc = getStdHandle(STD_OUTPUT_HANDLE);
 	
 	if((dir = opendir(filepath)) == NULL){
 		if(strncmp(filepath, ".", 128) == 0)fprintf(stderr, "current directry cannot open.\n");
@@ -371,35 +371,35 @@ void out_picsize(struct dirent *dp, char *filepath){
 	size.w = 0;
 	if(mediaFileNumber(dp->d_name) == 0){ //JPEG
 		snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
-		size = GetJpegSize(filepathname);
+		size = getJpegSize(filepathname);
 		printf("| %d", size.w);
-		for(i = 0; i < 7 - (int)GetDigit(size.w); i++){
+		for(i = 0; i < 7 - (int)getDigit(size.w); i++){
 			printf(" ");
 		}
 		printf("| %d", size.h);
-		for(i = 0; i < 7 - (int)GetDigit(size.h); i++){
+		for(i = 0; i < 7 - (int)getDigit(size.h); i++){
 			printf(" ");
 		}
 	}else if(mediaFileNumber(dp->d_name) == 1){ //PNG
 		snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
-		size = GetPngSize(filepathname);
+		size = getPngSize(filepathname);
 		printf("| %d", size.w);
-		for(i = 0; i < 7 - (int)GetDigit(size.w); i++){
+		for(i = 0; i < 7 - (int)getDigit(size.w); i++){
 			printf(" ");
 		}
 		printf("| %d", size.h);
-		for(i = 0; i < 7 - (int)GetDigit(size.h); i++){
+		for(i = 0; i < 7 - (int)getDigit(size.h); i++){
 			printf(" ");
 		}
 	}else if(mediaFileNumber(dp->d_name) == 2){//BMP
 		snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
-		size = GetBMPSize(filepathname);
+		size = getBMPSize(filepathname);
 		printf("| %d", size.w);
-		for(i = 0; i < 7 - (int)GetDigit(size.w); i++){
+		for(i = 0; i < 7 - (int)getDigit(size.w); i++){
 			printf(" ");
 		}
 		printf("| %d", size.h);
-		for(i = 0; i < 7 - (int)GetDigit(size.h); i++){
+		for(i = 0; i < 7 - (int)getDigit(size.h); i++){
 			printf(" ");
 		}
 	}else{
@@ -456,27 +456,22 @@ int bineryFileNumber(char *filename){
 	return -1;
 }
 
-Size GetJpegSize(const char *jpg)
-{
-	Size ret = { 0, 0 };
+Size getJpegSize(const char *jpg){
+	Size ret = {0, 0};
 	unsigned char buf[8];
 	FILE *f = fopen(jpg, "rb"); 
-	while (f && fread(buf, 1, 2, f) == 2 && buf[0] == 0xff)
-	{
-		if (buf[1] >= 0xc0 && buf[1] <= 0xcf && fread(buf, 1, 7, f) == 7)
-		{
+	while (f && fread(buf, 1, 2, f) == 2 && buf[0] == 0xff){
+		if (buf[1] >= 0xc0 && buf[1] <= 0xcf && fread(buf, 1, 7, f) == 7){
 			ret.h = buf[3] * 256 + buf[4];
 			ret.w = buf[5] * 256 + buf[6];
-		}
-		else if (buf[1] == 0xd8 || (fread(buf, 1, 2, f) == 2 &&
-			!fseek(f, buf[0] * 256 + buf[1] - 2, SEEK_CUR))) continue;
+		}else if (buf[1] == 0xd8 || (fread(buf, 1, 2, f) == 2 && !fseek(f, buf[0] * 256 + buf[1] - 2, SEEK_CUR))) continue;
 		break;
 	}
 	if (f) fclose(f);
 	return ret;
 }
 
-Size GetPngSize(const char *png){
+Size getPngSize(const char *png){
 	Size ret = {0, 0};
 	unsigned char buf;
 	int correct = 0;
@@ -504,7 +499,7 @@ Size GetPngSize(const char *png){
 	return ret;
 }
 
-Size GetBMPSize(const char *bmp){
+Size getBMPSize(const char *bmp){
 	Size ret = {0, 0};
 	unsigned char buf;
 	int correct = 0;
@@ -524,7 +519,7 @@ Size GetBMPSize(const char *bmp){
 	return ret;
 }
 
-unsigned GetDigit(unsigned num){
+unsigned getDigit(unsigned num){
     unsigned digit=0;
 	if(num == 0)return 1;
     while(num!=0){
