@@ -593,8 +593,6 @@ void set_fsrc(){
 	ExpandEnvironmentStrings("%USERPROFILE%", userProfile, 128);
 	snprintf(path, 128, "%s/.fsrc", userProfile);
 	if((fp = fopen(path, "r")) == NULL){
-		printf("%s\n", path);
-		puts("cannot open fsrc.");
 		return;
 	}
 
