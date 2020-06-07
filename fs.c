@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <windows.h>
+#include <sys/stat.h>
 
 #define FILETYPE_MAX 21
 #define EXTENSION_MAXNUM 16
@@ -89,6 +90,7 @@ int ls_size(char *filepath);
 void set_fsrc();
 void out_filetype(struct dirent *dp);
 void out_picsize(struct dirent *dp, char *filepath);
+void out_filesize(struct dirent *dp, char *filepath);
 int ext_exist(char ext_array[][16], char *extension);
 int mediaFileNumber(char *filename);
 int codeFileNumber(char *filename);
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]){
 		strncpy(filepath, ".", 128);
 	}
 
-	while((opt = getopt(argc, argv, "ltgs:o:h")) != -1){
+	while((opt = getopt(argc, argv, "ltgLs:o:h")) != -1){
 		switch(opt){
 			case 'l':
 				info = 1;
@@ -135,6 +137,10 @@ int main(int argc, char *argv[]){
 			case 'g':
 				info = 1;
 				listtype[1] = 1;
+				break;
+			case 'L':
+				info = 1;
+				listtype[2] = 1;
 				break;
 			case 's':
 				strong = 1;
@@ -153,6 +159,7 @@ int main(int argc, char *argv[]){
 				puts("-l : View in list format");
 				puts("-t : View file type.");
 				puts("-g : View image file width and height.");
+				puts("-L : View file or folder size.");
 				puts("-s [extension] : Highlight files with specified extensions.");
 				puts("-o [extension] : Show only files with specified extensions.");
 				return 0;
@@ -246,7 +253,6 @@ int ls_info(char *filepath, char info[8]){
 	DIR *dir;
 	struct dirent *dp;
 	int i, j;
-	int spacenum;
 	int filename_length;
 	char *extension;
 	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -276,11 +282,13 @@ int ls_info(char *filepath, char info[8]){
 		printf("|-width--");
 		printf("|-height-");
 	}
+	if(info[2]){
+		printf("|--Length---");
+	}
 	printf("|\n");
 
 	for(j = 0; j < 2; j++, seekdir(dir, 0)){
 		for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
-			spacenum = 0;
 			if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
 			extension = get_extension(dp->d_name);
 			if(extension != NULL){
@@ -322,6 +330,7 @@ int ls_info(char *filepath, char info[8]){
 			if(USE_COLOR)SetConsoleTextAttribute(hc, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 			if(info[0])out_filetype(dp);
 			if(info[1])out_picsize(dp, filepath);
+			if(info[2])out_filesize(dp, filepath);
 			printf("|\n");
 		}
 	}
@@ -414,6 +423,56 @@ void out_picsize(struct dirent *dp, char *filepath){
 	}
 }
 
+int getFileSize(char *filepath){
+	struct stat sb;
+
+	if(stat(filepath, &sb) != 0){
+		fprintf(stderr, "%s cannnot open\n", filepath);
+		return 0;
+	}
+
+	return sb.st_size;
+}
+
+int getDirSize(char *folderpath){
+	struct dirent *dp;
+	char pathname[FILENAME_MAX];
+	DIR *dir;
+	int size = 0;
+	if((dir = opendir(folderpath)) == NULL){
+		fprintf(stderr, "\"%s\" cannot open\n", folderpath);
+		return 0;
+	}
+	for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
+		if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
+		snprintf(pathname, FILENAME_MAX, "%s/%s", folderpath, dp->d_name);
+		if(dp->d_type == DT_DIR){
+			size += getDirSize(pathname);
+		}else{
+			size += getFileSize(pathname);
+		}
+	}
+	closedir(dir);
+	return size;
+}
+
+void out_filesize(struct dirent *dp, char *filepath){
+	int i;
+	char filepathname[FILENAME_MAX];
+	int size;
+	
+	snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
+	if(dp->d_type == DT_DIR){
+		size = getDirSize(filepathname);
+	}else{
+		size = getFileSize(filepathname);
+	}
+	printf("| %d", size);
+	for(i = 0; i < 10 - (int)getDigit(size); i++){
+		printf(" ");
+	}
+}
+
 int ext_exist(char ext_array[][16], char *extension){
 	int i;
 
@@ -502,7 +561,6 @@ Size getPngSize(const char *png){
 Size getBMPSize(const char *bmp){
 	Size ret = {0, 0};
 	unsigned char buf;
-	int correct = 0;
 	int i;
 	FILE *f = fopen(bmp, "rb");
 	fseek(f, 18, SEEK_SET);
