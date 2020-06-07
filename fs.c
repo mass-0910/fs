@@ -108,21 +108,26 @@ char only = 0;
 
 int main(int argc, char *argv[]){
 	int opt;
-	char filepath[128];
+	char filepath[128] = ".";
 	char listtype[8] = {0};
 	char info = 0;
 	int strong_ext_index = 0;
 	int only_ext_index = 0;
+	int i;
 
 	memset(strong_ext, 0, EXTENSION_MAXNUM * 16);
 	memset(only_ext, 0, EXTENSION_MAXNUM * 16);
 
 	set_fsrc();
 
-	if(argc > 1 ? argv[1][0] != '-' : 0){
-		strncpy(filepath, argv[1], 128);
-	}else{
-		strncpy(filepath, ".", 128);
+	for(i = 1; i < argc; i++){
+		if(argv[i][0] != '-'){
+			strncpy(filepath, argv[i], 128);
+		}else{
+			if(argv[i][1] == 's' || argv[i][1] == 'o'){
+				i++;
+			}
+		}
 	}
 
 	while((opt = getopt(argc, argv, "ltgLs:o:h")) != -1){
