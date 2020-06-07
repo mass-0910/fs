@@ -1,14 +1,16 @@
 # fs (alternative ls command)
 
-## How to use
-
-You can use this code only on windows OS.
+The substitute of :shit: powershell ls command :thumbsdown:
 
 - Display in matrix or list format
 - Display file type
 - Display vertical and horizontal size of image file
 - Show only files with a specific extension
 - Highlight files with a specific extension
+
+## How to use
+
+You can use this code only on windows OS.
 
 Compile(Mingw gcc):
 ```
