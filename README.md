@@ -4,6 +4,12 @@
 
 You can use this code only on windows OS.
 
+- Display in matrix or list format
+- Display file type
+- Display vertical and horizontal size of image file
+- Show only files with a specific extension
+- Highlight files with a specific extension
+
 Compile(Mingw gcc):
 ```
 > gcc fs.c
