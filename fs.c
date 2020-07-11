@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
 		}
 	}
 
-	while((opt = getopt(argc, argv, "ltgLs:o:h")) != -1){
+	while((opt = getopt(argc, argv, "ltgLfs:o:h")) != -1){
 		switch(opt){
 			case 'l':
 				info = 1;
@@ -146,6 +146,10 @@ int main(int argc, char *argv[]){
 			case 'L':
 				info = 1;
 				listtype[2] = 1;
+				break;
+			case 'f':
+				info = 1;
+				listtype[3] = 1;
 				break;
 			case 's':
 				strong = 1;
@@ -165,6 +169,7 @@ int main(int argc, char *argv[]){
 				puts("-t : View file type.");
 				puts("-g : View image file width and height.");
 				puts("-L : View file or folder size.");
+				puts("-f : View full path.");
 				puts("-s [extension] : Highlight files with specified extensions.");
 				puts("-o [extension] : Show only files with specified extensions.");
 				return 0;
@@ -261,6 +266,9 @@ int ls_info(char *filepath, char info[8]){
 	int filename_length;
 	char *extension;
 	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
+	char fullpath[FILENAME_MAX];
+	char tmpbuf[FILENAME_MAX];
+	char filename[FILENAME_MAX];
 	
 	if((dir = opendir(filepath)) == NULL){
 		if(strncmp(filepath, ".", 128) == 0)fprintf(stderr, "current directry cannot open.\n");
@@ -270,7 +278,12 @@ int ls_info(char *filepath, char info[8]){
 
 	filename_length = FNAME_MAX;
 	for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
-		if(filename_length < (int)strlen(dp->d_name))filename_length = (int)strlen(dp->d_name);
+		if(info[3]){
+			snprintf(fullpath, FILENAME_MAX, "%s\\%s", getcwd(tmpbuf, FILENAME_MAX), dp->d_name);
+			if(filename_length < (int)strlen(fullpath))filename_length = (int)strlen(fullpath);
+		}else{
+			if(filename_length < (int)strlen(dp->d_name))filename_length = (int)strlen(dp->d_name);
+		}
 	}
 	seekdir(dir, 0);
 
@@ -306,30 +319,36 @@ int ls_info(char *filepath, char info[8]){
 				}
 			}
 
+			if(info[3]){
+				snprintf(filename, FILENAME_MAX, "%s\\%s", getcwd(tmpbuf, FILENAME_MAX), dp->d_name);
+			}else{
+				strncpy(filename, dp->d_name, FILENAME_MAX);
+			}
+
 			if(dp->d_type == DT_DIR){
 				if(j == 1)continue;
 				if(USE_COLOR){
 					if(ext_exist(strong_ext, "dir") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
 					else SetConsoleTextAttribute(hc, DIR_COLOR);
 				}
-				printf("%s", dp->d_name);
+				printf("%s", filename);
 			}else{
 				if(j == 0)continue;
 				if(extension != NULL){
 					if(USE_COLOR && (strcmp(extension, ".lnk") == 0 || strcmp(extension, ".url") == 0)){
 						if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, LINK_COLOR | BACKGROUND_GREEN | BACKGROUND_RED);
 						else SetConsoleTextAttribute(hc, LINK_COLOR);
-						printf("%s", dp->d_name);
+						printf("%s", filename);
 					}else{
 						if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
-						printf("%s", dp->d_name);
+						printf("%s", filename);
 					}
 				}else{
 					if(ext_exist(strong_ext, "nope") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
-					printf("%s", dp->d_name);
+					printf("%s", filename);
 				}
 			}
-			for(i = 0; i < filename_length - (int)strlen(dp->d_name); i++){
+			for(i = 0; i < filename_length - (int)strlen(filename); i++){
 				printf(" ");
 			}
 			if(USE_COLOR)SetConsoleTextAttribute(hc, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
