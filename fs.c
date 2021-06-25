@@ -82,7 +82,7 @@ int FNAME_MAX = 24;
 int COLUMN_SIZE = 4;
 char USE_COLOR = 1;
 WORD DIR_COLOR = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
-WORD LINK_COLOR = FOREGROUND_BLUE | FOREGROUND_INTENSITY; 
+WORD LINK_COLOR = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 
 int ls_normal(char *filepath);
 int ls_info(char *filepath, char info[8]);
@@ -188,13 +188,13 @@ int ls_normal(char *filepath){
 	int i, j;
 	HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
 	char *extension;
-	
+
 	if((dir = opendir(filepath)) == NULL){
 		if(strncmp(filepath, ".", 128) == 0)fprintf(stderr, "current directry cannot open.\n");
 		else fprintf(stderr, "%s cannot open.\n", filepath);
 		return -1;
 	}
-	
+
 	for(j = 0, i = 1; j < 2; j++, seekdir(dir, 0)){
 		for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
 			if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
@@ -269,7 +269,7 @@ int ls_info(char *filepath, char info[8]){
 	char fullpath[FILENAME_MAX];
 	char tmpbuf[FILENAME_MAX];
 	char filename[FILENAME_MAX];
-	
+
 	if((dir = opendir(filepath)) == NULL){
 		if(strncmp(filepath, ".", 128) == 0)fprintf(stderr, "current directry cannot open.\n");
 		else fprintf(stderr, "%s cannot open.\n", filepath);
@@ -399,7 +399,7 @@ void out_picsize(struct dirent *dp, char *filepath){
 	int i;
 	char filepathname[FILENAME_MAX];
 	Size size;
-	
+
 	size.h = 0;
 	size.w = 0;
 	if(mediaFileNumber(dp->d_name) == 0){ //JPEG
@@ -447,7 +447,7 @@ void out_picsize(struct dirent *dp, char *filepath){
 	}
 }
 
-int getFileSize(char *filepath){
+unsigned long long getFileSize(char *filepath){
 	struct stat sb;
 
 	if(stat(filepath, &sb) != 0){
@@ -458,11 +458,11 @@ int getFileSize(char *filepath){
 	return sb.st_size;
 }
 
-int getDirSize(char *folderpath){
+unsigned long long getDirSize(char *folderpath){
 	struct dirent *dp;
 	char pathname[FILENAME_MAX];
 	DIR *dir;
-	int size = 0;
+	unsigned long long size = 0;
 	if((dir = opendir(folderpath)) == NULL){
 		fprintf(stderr, "\"%s\" cannot open\n", folderpath);
 		return 0;
@@ -483,15 +483,15 @@ int getDirSize(char *folderpath){
 void out_filesize(struct dirent *dp, char *filepath){
 	int i;
 	char filepathname[FILENAME_MAX];
-	int size;
-	
+	unsigned long long size;
+
 	snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
 	if(dp->d_type == DT_DIR){
 		size = getDirSize(filepathname);
 	}else{
 		size = getFileSize(filepathname);
 	}
-	printf("| %d", size);
+	printf("| %I64d", size);
 	for(i = 0; i < 10 - (int)getDigit(size); i++){
 		printf(" ");
 	}
@@ -542,7 +542,7 @@ int bineryFileNumber(char *filename){
 Size getJpegSize(const char *jpg){
 	Size ret = {0, 0};
 	unsigned char buf[8];
-	FILE *f = fopen(jpg, "rb"); 
+	FILE *f = fopen(jpg, "rb");
 	while (f && fread(buf, 1, 2, f) == 2 && buf[0] == 0xff){
 		if (buf[1] >= 0xc0 && buf[1] <= 0xcf && fread(buf, 1, 7, f) == 7){
 			ret.h = buf[3] * 256 + buf[4];
