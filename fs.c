@@ -279,7 +279,8 @@ int ls_info(char *filepath, char info[8]){
 	filename_length = FNAME_MAX;
 	for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
 		if(info[3]){
-			snprintf(fullpath, FILENAME_MAX, "%s\\%s", getcwd(tmpbuf, FILENAME_MAX), dp->d_name);
+            snprintf(tmpbuf, sizeof(tmpbuf), "%s\\%s", filepath, dp->d_name);
+			GetFullPathName(tmpbuf, sizeof(fullpath), fullpath, NULL);
 			if(filename_length < (int)strlen(fullpath))filename_length = (int)strlen(fullpath);
 		}else{
 			if(filename_length < (int)strlen(dp->d_name))filename_length = (int)strlen(dp->d_name);
@@ -320,7 +321,8 @@ int ls_info(char *filepath, char info[8]){
 			}
 
 			if(info[3]){
-				snprintf(filename, FILENAME_MAX, "%s\\%s", getcwd(tmpbuf, FILENAME_MAX), dp->d_name);
+                snprintf(tmpbuf, sizeof(tmpbuf), "%s\\%s", filepath, dp->d_name);
+                GetFullPathName(tmpbuf, sizeof(filename), filename, NULL);
 			}else{
 				strncpy(filename, dp->d_name, FILENAME_MAX);
 			}
