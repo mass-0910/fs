@@ -92,13 +92,13 @@ void out_filetype(struct dirent *dp);
 void out_picsize(struct dirent *dp, char *filepath);
 void out_filesize(struct dirent *dp, char *filepath);
 int ext_exist(char ext_array[][16], char *extension);
-int mediaFileNumber(char *filename);
-int codeFileNumber(char *filename);
-int bineryFileNumber(char *filename);
-Size getJpegSize(const char *jpg);
-Size getPngSize(const char *png);
-Size getBMPSize(const char *bmp);
-unsigned getDigit(unsigned num);
+int media_file_number(char *filename);
+int code_file_number(char *filename);
+int binery_file_number(char *filename);
+Size get_jpeg_size(const char *jpg);
+Size get_png_size(const char *png);
+Size get_bmp_size(const char *bmp);
+unsigned get_digit(unsigned num);
 char *get_extension(char *filename);
 
 char strong_ext[EXTENSION_MAXNUM][16];
@@ -374,12 +374,12 @@ void out_filetype(struct dirent *dp){
 			if(USE_COLOR && (strcmp(extension, ".lnk") == 0 || strcmp(extension, ".url") == 0)){
 				snprintf(fileinfo, FILENAME_MAX, "shortcut");
 			}else{
-				if(mediaFileNumber(dp->d_name) != -1){
-					snprintf(fileinfo, FILENAME_MAX, "%s file", media_name[mediaFileNumber(dp->d_name)]);
-				}else if(codeFileNumber(dp->d_name) != -1){
-					snprintf(fileinfo, FILENAME_MAX, "%s file", code_type[codeFileNumber(dp->d_name)]);
-				}else if(bineryFileNumber(dp->d_name) != -1){
-					snprintf(fileinfo, FILENAME_MAX, "%s file", binery_name[bineryFileNumber(dp->d_name)]);
+				if(media_file_number(dp->d_name) != -1){
+					snprintf(fileinfo, FILENAME_MAX, "%s file", media_name[media_file_number(dp->d_name)]);
+				}else if(code_file_number(dp->d_name) != -1){
+					snprintf(fileinfo, FILENAME_MAX, "%s file", code_type[code_file_number(dp->d_name)]);
+				}else if(binery_file_number(dp->d_name) != -1){
+					snprintf(fileinfo, FILENAME_MAX, "%s file", binery_name[binery_file_number(dp->d_name)]);
 				}else{
 					snprintf(fileinfo, FILENAME_MAX, "file");
 				}
@@ -402,37 +402,37 @@ void out_picsize(struct dirent *dp, char *filepath){
 
 	size.h = 0;
 	size.w = 0;
-	if(mediaFileNumber(dp->d_name) == 0){ //JPEG
+	if(media_file_number(dp->d_name) == 0){ //JPEG
 		snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
-		size = getJpegSize(filepathname);
+		size = get_jpeg_size(filepathname);
 		printf("| %d", size.w);
-		for(i = 0; i < 7 - (int)getDigit(size.w); i++){
+		for(i = 0; i < 7 - (int)get_digit(size.w); i++){
 			printf(" ");
 		}
 		printf("| %d", size.h);
-		for(i = 0; i < 7 - (int)getDigit(size.h); i++){
+		for(i = 0; i < 7 - (int)get_digit(size.h); i++){
 			printf(" ");
 		}
-	}else if(mediaFileNumber(dp->d_name) == 1){ //PNG
+	}else if(media_file_number(dp->d_name) == 1){ //PNG
 		snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
-		size = getPngSize(filepathname);
+		size = get_png_size(filepathname);
 		printf("| %d", size.w);
-		for(i = 0; i < 7 - (int)getDigit(size.w); i++){
+		for(i = 0; i < 7 - (int)get_digit(size.w); i++){
 			printf(" ");
 		}
 		printf("| %d", size.h);
-		for(i = 0; i < 7 - (int)getDigit(size.h); i++){
+		for(i = 0; i < 7 - (int)get_digit(size.h); i++){
 			printf(" ");
 		}
-	}else if(mediaFileNumber(dp->d_name) == 2){//BMP
+	}else if(media_file_number(dp->d_name) == 2){//BMP
 		snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
-		size = getBMPSize(filepathname);
+		size = get_bmp_size(filepathname);
 		printf("| %d", size.w);
-		for(i = 0; i < 7 - (int)getDigit(size.w); i++){
+		for(i = 0; i < 7 - (int)get_digit(size.w); i++){
 			printf(" ");
 		}
 		printf("| %d", size.h);
-		for(i = 0; i < 7 - (int)getDigit(size.h); i++){
+		for(i = 0; i < 7 - (int)get_digit(size.h); i++){
 			printf(" ");
 		}
 	}else{
@@ -447,7 +447,7 @@ void out_picsize(struct dirent *dp, char *filepath){
 	}
 }
 
-unsigned long long getFileSize(char *filepath){
+unsigned long long get_file_size(char *filepath){
 	struct stat sb;
 
 	if(stat(filepath, &sb) != 0){
@@ -458,7 +458,7 @@ unsigned long long getFileSize(char *filepath){
 	return sb.st_size;
 }
 
-unsigned long long getDirSize(char *folderpath){
+unsigned long long get_dir_size(char *folderpath){
 	struct dirent *dp;
 	char pathname[FILENAME_MAX];
 	DIR *dir;
@@ -471,9 +471,9 @@ unsigned long long getDirSize(char *folderpath){
 		if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
 		snprintf(pathname, FILENAME_MAX, "%s/%s", folderpath, dp->d_name);
 		if(dp->d_type == DT_DIR){
-			size += getDirSize(pathname);
+			size += get_dir_size(pathname);
 		}else{
-			size += getFileSize(pathname);
+			size += get_file_size(pathname);
 		}
 	}
 	closedir(dir);
@@ -487,12 +487,12 @@ void out_filesize(struct dirent *dp, char *filepath){
 
 	snprintf(filepathname, FILENAME_MAX, "%s/%s", filepath, dp->d_name);
 	if(dp->d_type == DT_DIR){
-		size = getDirSize(filepathname);
+		size = get_dir_size(filepathname);
 	}else{
-		size = getFileSize(filepathname);
+		size = get_file_size(filepathname);
 	}
 	printf("| %I64d", size);
-	for(i = 0; i < 10 - (int)getDigit(size); i++){
+	for(i = 0; i < 10 - (int)get_digit(size); i++){
 		printf(" ");
 	}
 }
@@ -509,7 +509,7 @@ int ext_exist(char ext_array[][16], char *extension){
 	return -1;
 }
 
-int mediaFileNumber(char *filename){
+int media_file_number(char *filename){
 	int i;
 	char *extension;
 	if((extension = get_extension(filename)) == NULL)return -1;
@@ -519,7 +519,7 @@ int mediaFileNumber(char *filename){
 	return -1;
 }
 
-int codeFileNumber(char *filename){
+int code_file_number(char *filename){
 	int i;
 	char *extension;
 	if((extension = get_extension(filename)) == NULL)return -1;
@@ -529,7 +529,7 @@ int codeFileNumber(char *filename){
 	return -1;
 }
 
-int bineryFileNumber(char *filename){
+int binery_file_number(char *filename){
 	int i;
 	char *extension;
 	if((extension = get_extension(filename)) == NULL)return -1;
@@ -539,7 +539,7 @@ int bineryFileNumber(char *filename){
 	return -1;
 }
 
-Size getJpegSize(const char *jpg){
+Size get_jpeg_size(const char *jpg){
 	Size ret = {0, 0};
 	unsigned char buf[8];
 	FILE *f = fopen(jpg, "rb");
@@ -554,7 +554,7 @@ Size getJpegSize(const char *jpg){
 	return ret;
 }
 
-Size getPngSize(const char *png){
+Size get_png_size(const char *png){
 	Size ret = {0, 0};
 	unsigned char buf;
 	int correct = 0;
@@ -582,7 +582,7 @@ Size getPngSize(const char *png){
 	return ret;
 }
 
-Size getBMPSize(const char *bmp){
+Size get_bmp_size(const char *bmp){
 	Size ret = {0, 0};
 	unsigned char buf;
 	int i;
@@ -601,7 +601,7 @@ Size getBMPSize(const char *bmp){
 	return ret;
 }
 
-unsigned getDigit(unsigned num){
+unsigned get_digit(unsigned num){
     unsigned digit=0;
 	if(num == 0)return 1;
     while(num!=0){
