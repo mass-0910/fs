@@ -153,11 +153,19 @@ int main(int argc, char *argv[]){
 				break;
 			case 's':
 				strong = 1;
+                if(strong_ext_index > EXTENSION_MAXNUM) {
+                    fprintf(stderr, "can't specify more than 16 extensions.\n");
+                    exit(-1);
+                }
 				strcpy(strong_ext[strong_ext_index], optarg);
 				strong_ext_index++;
 				break;
 			case 'o':
 				only = 1;
+                if(only_ext_index > EXTENSION_MAXNUM) {
+                    fprintf(stderr, "can't specify more than 16 extensions.\n");
+                    exit(-1);
+                }
 				strcpy(only_ext[only_ext_index], optarg);
 				only_ext_index++;
 				break;
@@ -176,10 +184,8 @@ int main(int argc, char *argv[]){
 				break;
 		}
 	}
-	if(info == 0)ls_normal(filepath);
-	else ls_info(filepath, listtype);
-
-	return 0;
+	if(info == 0) return ls_normal(filepath);
+	else return ls_info(filepath, listtype);
 }
 
 int ls_normal(char *filepath){
