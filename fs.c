@@ -153,7 +153,7 @@ int main(int argc, char *argv[]){
 				break;
 			case 's':
 				strong = 1;
-                if(strong_ext_index > EXTENSION_MAXNUM) {
+                if(strong_ext_index >= EXTENSION_MAXNUM) {
                     fprintf(stderr, "can't specify more than 16 extensions.\n");
                     exit(-1);
                 }
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]){
 				break;
 			case 'o':
 				only = 1;
-                if(only_ext_index > EXTENSION_MAXNUM) {
+                if(only_ext_index >= EXTENSION_MAXNUM) {
                     fprintf(stderr, "can't specify more than 16 extensions.\n");
                     exit(-1);
                 }
