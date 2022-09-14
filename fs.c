@@ -113,7 +113,8 @@ int main(int argc, char *argv[]){
     char info = 0;
     int strong_ext_index = 0;
     int only_ext_index = 0;
-    int i;
+    int i, j;
+    const char *optstring = "ltgLfs:o:c:h";
 
     memset(strong_ext, 0, EXTENSION_MAXNUM * 16);
     memset(only_ext, 0, EXTENSION_MAXNUM * 16);
@@ -124,13 +125,16 @@ int main(int argc, char *argv[]){
         if(argv[i][0] != '-'){
             strncpy(filepath, argv[i], 128);
         }else{
-            if(argv[i][1] == 's' || argv[i][1] == 'o'){
-                i++;
+            for(j = 0; j < strlen(optstring) - 1; j++){
+                if(argv[i][1] == optstring[j] && optstring[j + 1] == ':'){
+                    i++;
+                    break;
+                }
             }
         }
     }
 
-    while((opt = getopt(argc, argv, "ltgLfs:o:h")) != -1){
+    while((opt = getopt(argc, argv, optstring)) != -1){
         switch(opt){
             case 'l':
                 info = 1;
@@ -171,6 +175,9 @@ int main(int argc, char *argv[]){
                 only_ext[only_ext_index][15] = '\0';
                 only_ext_index++;
                 break;
+            case 'c':
+                COLUMN_SIZE = atoi(optarg);
+                break;
             case 'h':
             default:
                 puts("Usage: fs [directryPath] [-option]");
@@ -180,6 +187,7 @@ int main(int argc, char *argv[]){
                 puts("-g : View image file width and height.");
                 puts("-L : View file or folder size.");
                 puts("-f : View full path.");
+                puts("-c [column_size] : Set column size.");
                 puts("-s [extension] : Highlight files with specified extensions.");
                 puts("-o [extension] : Show only files with specified extensions.");
                 return 0;
