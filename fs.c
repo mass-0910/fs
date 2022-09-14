@@ -157,7 +157,8 @@ int main(int argc, char *argv[]){
                     fprintf(stderr, "can't specify more than 16 extensions.\n");
                     exit(-1);
                 }
-                strcpy(strong_ext[strong_ext_index], optarg);
+                strncpy(strong_ext[strong_ext_index], optarg, 16 - 1);
+                strong_ext[strong_ext_index][15] = '\0';
                 strong_ext_index++;
                 break;
             case 'o':
@@ -166,7 +167,8 @@ int main(int argc, char *argv[]){
                     fprintf(stderr, "can't specify more than 16 extensions.\n");
                     exit(-1);
                 }
-                strcpy(only_ext[only_ext_index], optarg);
+                strncpy(only_ext[only_ext_index], optarg, 16 - 1);
+                only_ext[only_ext_index][15] = '\0';
                 only_ext_index++;
                 break;
             case 'h':
