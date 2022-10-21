@@ -8,6 +8,8 @@
 
 #define FILETYPE_MAX 21
 #define EXTENSION_MAXNUM 16
+#define ENTRY_MODE_DIR 1
+#define ENTRY_MODE_FILE 2
 
 char *media_file[] = {
     ".jpg",
@@ -84,9 +86,9 @@ char USE_COLOR = 1;
 WORD DIR_COLOR = FOREGROUND_GREEN | FOREGROUND_INTENSITY;
 WORD LINK_COLOR = FOREGROUND_BLUE | FOREGROUND_INTENSITY;
 
+struct dirent *next_dirent(DIR *dir);
 int ls_normal(char *filepath);
 int ls_info(char *filepath, char info[8]);
-int ls_size(char *filepath);
 void set_fsrc();
 void out_filetype(struct dirent *dp);
 void out_picsize(struct dirent *dp, char *filepath);
@@ -198,10 +200,38 @@ int main(int argc, char *argv[]){
     else return ls_info(filepath, listtype);
 }
 
+struct dirent *next_dirent(DIR *dir){
+    static int entry_mode = ENTRY_MODE_DIR;
+    struct dirent *dp;
+    char *extension;
+    for(dp = readdir(dir); dp != NULL || entry_mode == ENTRY_MODE_DIR; dp = readdir(dir)){
+        if(entry_mode == ENTRY_MODE_DIR && dp == NULL){
+            seekdir(dir, 0);
+            entry_mode = ENTRY_MODE_FILE;
+            continue;
+        }
+        if(entry_mode == ENTRY_MODE_DIR && dp->d_type != DT_DIR) continue;
+        if(entry_mode == ENTRY_MODE_FILE && dp->d_type == DT_DIR) continue;
+        if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
+        extension = get_extension(dp->d_name);
+        if(extension != NULL){
+            if(only && ext_exist(only_ext, extension + 1) != 0)continue;
+        }else{
+            if(dp->d_type == DT_DIR){
+                if(only && ext_exist(only_ext, "dir") != 0)continue;
+            }else{
+                if(only && ext_exist(only_ext, "nope") != 0)continue;
+            }
+        }
+        break;
+    }
+    return dp;
+}
+
 int ls_normal(char *filepath){
     DIR *dir;
     struct dirent *dp;
-    int i, j;
+    int i;
     HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
     char *extension;
 
@@ -211,65 +241,51 @@ int ls_normal(char *filepath){
         return -1;
     }
 
-    for(j = 0, i = 1; j < 2; j++, seekdir(dir, 0)){
-        for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
-            if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
-            extension = get_extension(dp->d_name);
-            if(extension != NULL){
-                if(only && ext_exist(only_ext, extension + 1) != 0)continue;
-            }else{
-                if(dp->d_type == DT_DIR){
-                    if(only && ext_exist(only_ext, "dir") != 0)continue;
-                }else{
-                    if(only && ext_exist(only_ext, "nope") != 0)continue;
-                }
+    i = 1;
+    for(dp = next_dirent(dir); dp != NULL; dp = next_dirent(dir)){
+        if(dp->d_type == DT_DIR){
+            if(USE_COLOR){
+                if(ext_exist(strong_ext, "dir") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
+                else SetConsoleTextAttribute(hc, DIR_COLOR);
             }
-            if(dp->d_type == DT_DIR){
-                if(j == 1)continue;
-                if(USE_COLOR){
-                    if(ext_exist(strong_ext, "dir") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
-                    else SetConsoleTextAttribute(hc, DIR_COLOR);
-                }
-                printf("-%s", dp->d_name);
-            }else{
-                if(j == 0)continue;
-                if(extension != NULL){
-                    if(USE_COLOR && (strcmp(extension, ".lnk") == 0 || strcmp(extension, ".url") == 0)){
-                        if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, LINK_COLOR | BACKGROUND_GREEN | BACKGROUND_RED);
-                        else SetConsoleTextAttribute(hc, LINK_COLOR);
-                        printf(" %s", dp->d_name);
-                    }else{
-                        if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
-                        printf(" %s", dp->d_name);
-                    }
+            printf("-%s", dp->d_name);
+        }else{
+            if(extension != NULL){
+                if(USE_COLOR && (strcmp(extension, ".lnk") == 0 || strcmp(extension, ".url") == 0)){
+                    if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, LINK_COLOR | BACKGROUND_GREEN | BACKGROUND_RED);
+                    else SetConsoleTextAttribute(hc, LINK_COLOR);
+                    printf(" %s", dp->d_name);
                 }else{
-                    if(ext_exist(strong_ext, "nope") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
+                    if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
                     printf(" %s", dp->d_name);
                 }
-            }
-
-            int j, spacenum;
-            for(j = 1; (spacenum = FNAME_MAX * j - ((int)strlen(dp->d_name) + 1) + (j >= 2 ? 1 : 0)) < 0;j++){
-                i++;
-                if(i >= COLUMN_SIZE){
-                    i = 0;
-                    break;
-                }
-            }
-            for(j = 0; j < spacenum; j++){
-                printf(" ");
-            }
-
-            if(USE_COLOR)SetConsoleTextAttribute(hc, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-            if(i % COLUMN_SIZE == 0){
-                i = 0;
-                printf("\n");
             }else{
-                printf("|");
+                if(ext_exist(strong_ext, "nope") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
+                printf(" %s", dp->d_name);
             }
-
-            i++;
         }
+
+        int j, spacenum;
+        for(j = 1; (spacenum = FNAME_MAX * j - ((int)strlen(dp->d_name) + 1) + (j >= 2 ? 1 : 0)) < 0; j++){
+            i++;
+            if(i >= COLUMN_SIZE){
+                i = 0;
+                break;
+            }
+        }
+        for(j = 0; j < spacenum; j++){
+            printf(" ");
+        }
+
+        if(USE_COLOR)SetConsoleTextAttribute(hc, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        if(i % COLUMN_SIZE == 0){
+            i = 0;
+            printf("\n");
+        }else{
+            printf("|");
+        }
+
+        i++;
     }
     closedir(dir);
     return 0;
@@ -278,7 +294,7 @@ int ls_normal(char *filepath){
 int ls_info(char *filepath, char info[8]){
     DIR *dir;
     struct dirent *dp;
-    int i, j;
+    int i;
     int filename_length;
     char *extension;
     HANDLE hc = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -322,59 +338,43 @@ int ls_info(char *filepath, char info[8]){
     }
     printf("|\n");
 
-    for(j = 0; j < 2; j++, seekdir(dir, 0)){
-        for(dp = readdir(dir); dp != NULL; dp = readdir(dir)){
-            if(strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)continue;
-            extension = get_extension(dp->d_name);
+    for(dp = next_dirent(dir); dp != NULL; dp = next_dirent(dir)){
+        if(info[3]){
+            snprintf(tmpbuf, sizeof(tmpbuf), "%s\\%s", filepath, dp->d_name);
+            GetFullPathName(tmpbuf, sizeof(filename), filename, NULL);
+        }else{
+            strncpy(filename, dp->d_name, FILENAME_MAX);
+        }
+
+        if(dp->d_type == DT_DIR){
+            if(USE_COLOR){
+                if(ext_exist(strong_ext, "dir") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
+                else SetConsoleTextAttribute(hc, DIR_COLOR);
+            }
+            printf("%s", filename);
+        }else{
             if(extension != NULL){
-                if(only && ext_exist(only_ext, extension + 1) != 0)continue;
-            }else{
-                if(dp->d_type == DT_DIR){
-                    if(only && ext_exist(only_ext, "dir") != 0)continue;
+                if(USE_COLOR && (strcmp(extension, ".lnk") == 0 || strcmp(extension, ".url") == 0)){
+                    if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, LINK_COLOR | BACKGROUND_GREEN | BACKGROUND_RED);
+                    else SetConsoleTextAttribute(hc, LINK_COLOR);
+                    printf("%s", filename);
                 }else{
-                    if(only && ext_exist(only_ext, "nope") != 0)continue;
-                }
-            }
-
-            if(info[3]){
-                snprintf(tmpbuf, sizeof(tmpbuf), "%s\\%s", filepath, dp->d_name);
-                GetFullPathName(tmpbuf, sizeof(filename), filename, NULL);
-            }else{
-                strncpy(filename, dp->d_name, FILENAME_MAX);
-            }
-
-            if(dp->d_type == DT_DIR){
-                if(j == 1)continue;
-                if(USE_COLOR){
-                    if(ext_exist(strong_ext, "dir") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
-                    else SetConsoleTextAttribute(hc, DIR_COLOR);
-                }
-                printf("%s", filename);
-            }else{
-                if(j == 0)continue;
-                if(extension != NULL){
-                    if(USE_COLOR && (strcmp(extension, ".lnk") == 0 || strcmp(extension, ".url") == 0)){
-                        if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, LINK_COLOR | BACKGROUND_GREEN | BACKGROUND_RED);
-                        else SetConsoleTextAttribute(hc, LINK_COLOR);
-                        printf("%s", filename);
-                    }else{
-                        if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
-                        printf("%s", filename);
-                    }
-                }else{
-                    if(ext_exist(strong_ext, "nope") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
+                    if(ext_exist(strong_ext, extension + 1) == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
                     printf("%s", filename);
                 }
+            }else{
+                if(ext_exist(strong_ext, "nope") == 0 && strong)SetConsoleTextAttribute(hc, BACKGROUND_GREEN | BACKGROUND_RED);
+                printf("%s", filename);
             }
-            for(i = 0; i < filename_length - (int)strlen(filename); i++){
-                printf(" ");
-            }
-            if(USE_COLOR)SetConsoleTextAttribute(hc, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-            if(info[0])out_filetype(dp);
-            if(info[1])out_picsize(dp, filepath);
-            if(info[2])out_filesize(dp, filepath);
-            printf("|\n");
         }
+        for(i = 0; i < filename_length - (int)strlen(filename); i++){
+            printf(" ");
+        }
+        if(USE_COLOR)SetConsoleTextAttribute(hc, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+        if(info[0])out_filetype(dp);
+        if(info[1])out_picsize(dp, filepath);
+        if(info[2])out_filesize(dp, filepath);
+        printf("|\n");
     }
     closedir(dir);
     return 0;
